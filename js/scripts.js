@@ -43,7 +43,13 @@ async function searchArtist(name) {
     `&type=artist&limit=1`;
 
     // Call the API with token
-    const res = await res.json();
+    const res = await fetch(url, {
+        headers: 
+        { "Authorization": `Bearer ${spotifyToken}`}
+    });
+
+    // Parse the Json response
+    const data = await res.json();
     
     // Return the artist
     return data.artists.items[0];
