@@ -54,7 +54,7 @@ async function searchArtist(name) {
     
     // Return the artist
     return data.artists.items[0];
-}
+};
 
 // Get the top 5 tracks of the artist using their id
 async function getTopTracks(artistId) {
@@ -62,7 +62,7 @@ async function getTopTracks(artistId) {
     if (!spotifyToken) {
         login();
         return [];
-    }
+    };
 
     // Building the spotify top tracks with the api url
     const url = `https://api.spotify.com/v1/artists/{id}/top-tracks?market=CA`;
@@ -79,11 +79,11 @@ async function getTopTracks(artistId) {
 
     // Return the top 5 tracks array
     return data.tracks.slice(0, 5);
-}
+};
 
 // Rendering the artist profile
 // get the top tracks as well
-function getArtistTracks(artist, tracks) {
+function renderArtistTracks(artist, tracks) {
     const output = document.getElementById("output");
     output.innerHTML = "";
 
@@ -93,6 +93,45 @@ function getArtistTracks(artist, tracks) {
         msg.textContent = "No artist found! please try again!";
         output.appendChild(msg);
         return;
-    }
+    };
+
+    // the container of the artist: name, image, followers, genre of music
+    const container = document.createElement("div");
+
+    const artistName = document.createElement("h2");
+    artistName.textContent = artist.name;
+    container.appendChild(artistName);
+
+    const imgUrl = artist.images[1]?.url || artist.images[0]?.url;
+    if (imgUrl) {
+        const imgEl = document.createElement("img");
+        imgEl.src = imgUrl;
+        imgEl.alt = artist.name;
+        imgEl.width = 150;
+        container.appendChild(imgEl);
+    };
+
+    const followersEl = document.createElement("p");
+    followersEl.textContent = `Followers: ${artist.followers.total.toLocaleString()}`;
+    container.appendChild(followersEl);
+
+    const genresEl = document.createElement("p");
+    const genreText = artist.genres && artist.genres.length ? artist.genres.join(", ") : "N/A";
+    genresEl.textContent = `Genres: ${genreText}`;
+    container.appendChild(genresEl);
+
+    const musicTracks = document.createElement("h3");
+    musicTracks.textContent = "Top Tracks";
+    container.appendChild(musicTracks);
+
+    const list = document.createElement("ol");
+    tracks.forEach(track => {
+        const li = document.createElement("li");
+        li.textContent = track.name;
+        list.appendChild(li);
+    });
+    container.appendChild(list);
+
+    output.appendChild(container);
 }
 
