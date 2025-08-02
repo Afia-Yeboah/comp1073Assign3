@@ -80,3 +80,19 @@ async function getTopTracks(artistId) {
     // Return the top 5 tracks array
     return data.tracks.slice(0, 5);
 }
+
+// Rendering the artist profile
+// get the top tracks as well
+function getArtistTracks(artist, tracks) {
+    const output = document.getElementById("output");
+    output.innerHTML = "";
+
+    // if no artist is found- display a msg
+    if (!artist) {
+        const msg = document.createElement("p");
+        msg.textContent = "No artist found! please try again!";
+        output.appendChild(msg);
+        return;
+    }
+}
+
