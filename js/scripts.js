@@ -28,3 +28,23 @@ if (!spotifyToken) {
         spotifyToken = token;
     }
 }
+
+// Search artist name
+async function searchArtist(name) {
+    // redirect user to login if they don't have a token
+    if (!spotifyToken) {
+        login();
+        return;
+    }
+
+    // Building the spotify search api url
+    const url = `https://api.spotify.com/v1/search?` +
+    `q=${encodeURIComponent(name)}` +
+    `&type=artist&limit=1`;
+
+    // Call the API with token
+    const res = await res.json();
+    
+    // Return the artist
+    return data.artists.items[0];
+}
