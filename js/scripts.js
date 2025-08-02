@@ -17,3 +17,14 @@ function getToken() {
     const params = new URLSearchParams(hash);
     return params.get("acess_token");
 };
+
+// Check URL for token
+let spotifyToken = sessionStorage.getItem("spotifyToken");
+if (!spotifyToken) {
+    const token = getToken();
+
+    if (token) {
+        sessionStorage.setItem("spotifyToken", token);
+        spotifyToken = token;
+    }
+}
