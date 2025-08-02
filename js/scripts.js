@@ -34,7 +34,7 @@ async function searchArtist(name) {
     // redirect user to login if they don't have a token
     if (!spotifyToken) {
         login();
-        return;
+        return null;
     }
 
     // Building the spotify search api url
@@ -44,8 +44,9 @@ async function searchArtist(name) {
 
     // Call the API with token
     const res = await fetch(url, {
-        headers: 
-        { "Authorization": `Bearer ${spotifyToken}`}
+        headers: { 
+            "Authorization": `Bearer ${spotifyToken}`
+        }
     });
 
     // Parse the Json response
@@ -53,4 +54,29 @@ async function searchArtist(name) {
     
     // Return the artist
     return data.artists.items[0];
+}
+
+// Get the top 5 tracks of the artist using their id
+async function getTopTracks(artistId) {
+    // send user to login if there'rs no token yet
+    if (!spotifyToken) {
+        login();
+        return [];
+    }
+
+    // Building the spotify top tracks with the api url
+    const url = `https://api.spotify.com/v1/artists/{id}/top-tracks?market=CA`;
+
+    // Call API
+    const res = await fetch(url, {
+        headers: {
+            "Authorization":`Bearer ${spotifyToken}`
+        }
+    });
+
+    // Parse the JSON res
+    const data = await res.json();
+
+    // Return the top 5 tracks array
+    return data.tracks.slice(0, 5);
 }
