@@ -124,14 +124,45 @@ function renderArtistTracks(artist, tracks) {
     musicTracks.textContent = "Top Tracks";
     container.appendChild(musicTracks);
 
-    const list = document.createElement("ol");
+    // if there's no song tracks
+    // display msg and skip list
+    if (!tracks.length) {
+        const noMsg = document.createElement("p");
+        noMsg.textContent = "This artist has no top tracks currently available!";
+        container.appendChild(noMsg);
+    } else {
+
+        // else display the list of songs
+        const list = document.createElement("ol");
     tracks.forEach(track => {
         const li = document.createElement("li");
         li.textContent = track.name;
         list.appendChild(li);
     });
     container.appendChild(list);
+    }
 
     output.appendChild(container);
 }
+
+// setting up the search button
+// fetch the artist + song tracks and render to page
+const searchBtn = document.getElemenetById("searchBtn");
+const artistInput = document.getElemenetById("artistInput");
+const output = document.getElemenetById("output");
+
+searchBtn.addEventListener("click", async () => {
+    const name = artistInput.value();
+    if (!name) return;
+
+    // Show a msg while user wait eg. loading srtist
+    output.textContent = "Loading artist...";
+
+    // fetch the artist
+    const artist = await searchArtist(name);
+
+    const tracks = artist ? await getTopTracks(artist.id) : [];
+
+    renderArtistTracks(artist, tracks);
+});
 
