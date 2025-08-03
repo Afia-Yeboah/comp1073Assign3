@@ -1,174 +1,191 @@
+// Switching to Auth with PCKE: Implicit Grant is deprecated
 // Setting up client id and redirect uri form web api
 const clientId = "c41a56045bc44c9fbaf18dbb27c4f7de";
-const redirectUri = "window.location.origin";
-//window.location.origin
-//http://127.0.0.1:3000
+const redirectUri = window.location.origin + window.location.pathname;
 
-// Function to redirect user to Spotify's login for token
-function login() {
-    const authUrl = new URL("https://accounts.spotify.com/authorize");
-    authUrl.searchParams.set("client_id", clientId);
-    authUrl.searchParams.set("response_type", "token");
-    authUrl.searchParams.set("redirect_uri", redirectUri);
-    window.location = authUrl.toString();
-};
-
-// Function to parse the access token from the URL
-function getToken() {
-    const hash = window.location.hash.substring(1); // this is to remove the # symbol when the url is retrieved from spotify
-    const params = new URLSearchParams(hash);
-    return params.get("access_token");
-};
-
-// Check URL for token
-let spotifyToken = sessionStorage.getItem("spotifyToken");
-console.log("Token from sessionStorage:", spotifyToken);
-
-if (!spotifyToken) {
-    const token = getToken();
-    console.log("Token from URL:", token);
-
-    if (token) {
-        sessionStorage.setItem("spotifyToken", token);
-        spotifyToken = token;
-    }
+// PKCE Helpers
+function makeVerifier () {
+    const array = new Uint8Array(64);
+    crypto.getRandomValues(array);
+    return Array.from(array).map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
-// Search artist name
-async function searchArtist(name) {
-    // redirect user to login if they don't have a token
-    if (!spotifyToken) {
-        login();
-        return null;
+// PKCE verifier in challenge(from documentation)
+async function makeChallenge(verifier) {
+    const hashBuffer = await crypto.subtle.digest("SHA-256", 
+        new TextEncoder().encode(verifier)
+    );
+    const hashArray = new Uint8Array(hashBuffer);
+    const base64 = btoa(String.fromCharCode(...hashArray));
+    return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+//Once page loads, login handle
+(async function authenticate() {
+    const params = new URLSearchParams(window.location.search);
+    const codeParam = params.get("code");
+    const storedToken = sessionStorage.getItem("sessionToken");
+
+    if (storedToken) return;
+
+    if (codeParam) {
+        const verifier = sessionStorage.getItem("sessionVerifier");
+        const body = new URLSearchParams({
+            grant_type: "authorization_code",
+            code: codeParam,
+            redirect_uri: redirectUri,
+            client_id: clientId,
+            code_verifier: verifier
+        });
+
+        const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body
+        });
+        const {access_token} = await tokenResponse.json();
+        sessionStorage.setItem("sessionToken", access_token);
+        window.history.replaceState({}, "", redirectUri);
+        return;
     }
-    console.log("Using token:", spotifyToken)
 
-    // Building the spotify search api url
-    const url = `https://api.spotify.com/v1/search?` +
-    `q=${encodeURIComponent(name)}` +
-    `&type=artist&limit=1`;
+    // begin the PKCE login
+    const verifier = makeVerifier();
+    const challenge = await makeChallenge(verifier);
+    sessionStorage.setItem("sessionVerifier", verifier);
 
-    // Call the API with token
-    const res = await fetch(url, {
-        headers: { 
-            "Authorization": `Bearer ${spotifyToken}`
-        }
-    });
+    const authUrl = new URL("https://accounts.spotify.com/authorize");
+    authUrl.searchParams.set("client_id", clientId);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("code_challenge_method", "S256");
+    authUrl.searchParams.set("code_challenge", challenge);
 
-    // Parse the Json response
-    const data = await res.json();
-    
-    // Return the artist
-    return data.artists.items[0];
+    window.location = authUrl;
+})();
+
+
+
+// Function to get the access token
+function getAccessToken() {
+    const token = sessionStorage.getItem("sessionToken");
+    if (!token) {
+        throw new Error("You're not authenticated- please retry!");
+    }
+    return token;
 };
+
+// Call the search endpooint for the artist
+async function searchArtist(name) {
+    const token = getAccessToken();
+    const authHeader = { Authorization: `Bearer ${token}` };
+    // using the search api url
+    const searchUrl = `https://api.spotify.com/v1/search`
+                     + `?q=${encodeURIComponent(name)}`
+                     + `&type=artist&limit=1`;
+
+const searchResponse = await fetch(searchUrl, {
+    headers: {Authorization: `Bearer ${token}`}
+});
+
+if (!searchResponse.ok) {
+    console.error(
+        "Artist search failed:", 
+        await searchResponse.text()
+    );
+    return null;
+}
+
+//Parse the json response
+const searchData = await searchResponse.json();
+
+// Return the artist
+return searchData.artists.items[0] || null;
+}
+
 
 // Get the top 5 tracks of the artist using their id
-async function getTopTracks(artistId) {
-    // send user to login if there'rs no token yet
-    if (!spotifyToken) {
-        login();
-        return [];
-    };
+async function fetchTopTracks(artistId) {
+    const token = getAccessToken();
+    const authHeader = { Authorization: `Bearer ${token}`};
 
-    // Building the spotify top tracks with the api url
-    const url = `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`;
+    // Using the track endpoint
+    const tracksUrl = `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`;
+    const topTracksRes = await fetch(tracksUrl, {headers: authHeader});
 
-    // Call API
-    const res = await fetch(url, {
-        headers: {
-            "Authorization":`Bearer ${spotifyToken}`
-        }
-    });
+    // Parse the Json res
+    const topTracksData = await topTracksRes.json();
 
-    // Parse the JSON res
-    const data = await res.json();
-
-    // Return the top 5 tracks array
-    return data.tracks.slice(0, 5);
+    // return the top 5 tracks
+    return topTracksData.tracks.slice(0, 5);
 };
 
-// Rendering the artist profile
-// get the top tracks as well
+// Rendering the artist info along with
+// their top 5 tracks as well
 function renderArtistTracks(artist, tracks) {
-    const output = document.getElementById("output");
-    output.innerHTML = "";
+    const container = document.getElementById("output");
+    container.innerHTML = "";
 
     // if no artist is found- display a msg
     if (!artist) {
-        const msg = document.createElement("p");
-        msg.textContent = "No artist found! please try again!";
-        output.appendChild(msg);
+        container.textContent = "No artist found! please try again!";
         return;
     };
 
-    // the container of the artist: name, image, followers, genre of music
-    const container = document.createElement("div");
 
     const artistName = document.createElement("h2");
     artistName.textContent = artist.name;
     container.appendChild(artistName);
 
-    const imgUrl = artist.images[1]?.url || artist.images[0]?.url;
-    if (imgUrl) {
-        const imgEl = document.createElement("img");
-        imgEl.src = imgUrl;
-        imgEl.alt = artist.name;
-        imgEl.width = 150;
-        container.appendChild(imgEl);
+    const artistImage = artist.images[0]?.url;
+    if (artistImage) {
+        const image = document.createElement("img");
+        image.src = artistImage;
+        image.alt = artist.name;
+        image.width = 150;
+        container.appendChild(image);
     };
 
-    const followersEl = document.createElement("p");
-    followersEl.textContent = `Followers: ${artist.followers.total.toLocaleString()}`;
-    container.appendChild(followersEl);
+    const followers = document.createElement("p");
+    followers.textContent = `Followers: ${artist.followers.total.toLocaleString()}`;
+    container.appendChild(followers);
 
-    const genresEl = document.createElement("p");
-    const genreText = artist.genres && artist.genres.length ? artist.genres.join(", ") : "N/A";
-    genresEl.textContent = `Genres: ${genreText}`;
-    container.appendChild(genresEl);
+    const genres = document.createElement("p");
+    genres.textContent = "Genres: " + (artist.genres.join(", ") || "N/A");
+    container.appendChild(genres);
 
+    // Music traks heading
     const musicTracks = document.createElement("h3");
     musicTracks.textContent = "Top Tracks";
     container.appendChild(musicTracks);
 
-    // if there's no song tracks
-    // display msg and skip list
-    if (!tracks.length) {
-        const noMsg = document.createElement("p");
-        noMsg.textContent = "This artist has no top tracks currently available!";
-        container.appendChild(noMsg);
-    } else {
-
-        // else display the list of songs
-        const list = document.createElement("ol");
+    // Top Tracks List
+    const tracksList = document.createElement("ol");
     tracks.forEach(track => {
-        const li = document.createElement("li");
-        li.textContent = track.name;
-        list.appendChild(li);
+        const trackItem = document.createElement("li");
+        trackItem.textContent = track.name;
+        tracksList.appendChild(trackItem);
     });
-    container.appendChild(list);
-    }
 
-    output.appendChild(container);
+    container.appendChild(tracksList);
 }
 
 // setting up the search button
 // fetch the artist + song tracks and render to page
-const searchBtn = document.getElementById("searchBtn");
-const artistInput = document.getElementById("artistInput");
-const output = document.getElementById("output");
-
-searchBtn.addEventListener("click", async () => {
-    const name = artistInput.value.trim();
-    if (!name) return;
+document.getElementById("searchBtn").onclick = async () => {
+    const query = document.getElementById("artistInput").value.trim();
+    if (!query) return;
 
     // Show a msg while user wait eg. loading srtist
-    output.textContent = "Loading artist...";
+document.getElementById("output").textContent = "Loading artist info...";
 
-    // fetch the artist
-    const artist = await searchArtist(name);
-
-    const tracks = artist ? await getTopTracks(artist.id) : [];
-
-    renderArtistTracks(artist, tracks);
-});
+try {
+    const artist = await searchArtist(query);
+    const topTracks = artist ? await fetchTopTracks(artist.id) : [];
+    renderArtistTracks(artist, topTracks);
+} catch (err) {
+    console.error(err);
+    document.getElementById("output").textContent = "Error occured!";
+}
+};
 
