@@ -1,6 +1,8 @@
 // Setting up client id and redirect uri form web api
 const clientId = "c41a56045bc44c9fbaf18dbb27c4f7de";
-const redirectUri = window.location.origin;
+const redirectUri = "window.location.origin";
+//window.location.origin
+//http://127.0.0.1:3000
 
 // Function to redirect user to Spotify's login for token
 function login() {
@@ -69,7 +71,7 @@ async function getTopTracks(artistId) {
     };
 
     // Building the spotify top tracks with the api url
-    const url = `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=CA`;
+    const url = `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`;
 
     // Call API
     const res = await fetch(url, {
