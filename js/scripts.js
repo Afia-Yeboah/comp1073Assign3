@@ -15,13 +15,16 @@ function login() {
 function getToken() {
     const hash = window.location.hash.substring(1); // this is to remove the # symbol when the url is retrieved from spotify
     const params = new URLSearchParams(hash);
-    return params.get("acess_token");
+    return params.get("access_token");
 };
 
 // Check URL for token
 let spotifyToken = sessionStorage.getItem("spotifyToken");
+console.log("Token from sessionStorage:", spotifyToken);
+
 if (!spotifyToken) {
     const token = getToken();
+    console.log("Token from URL:", token);
 
     if (token) {
         sessionStorage.setItem("spotifyToken", token);
@@ -36,6 +39,7 @@ async function searchArtist(name) {
         login();
         return null;
     }
+    console.log("Using token:", spotifyToken)
 
     // Building the spotify search api url
     const url = `https://api.spotify.com/v1/search?` +
@@ -65,7 +69,7 @@ async function getTopTracks(artistId) {
     };
 
     // Building the spotify top tracks with the api url
-    const url = `https://api.spotify.com/v1/artists/{id}/top-tracks?market=CA`;
+    const url = `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=CA`;
 
     // Call API
     const res = await fetch(url, {
@@ -147,12 +151,12 @@ function renderArtistTracks(artist, tracks) {
 
 // setting up the search button
 // fetch the artist + song tracks and render to page
-const searchBtn = document.getElemenetById("searchBtn");
-const artistInput = document.getElemenetById("artistInput");
-const output = document.getElemenetById("output");
+const searchBtn = document.getElementById("searchBtn");
+const artistInput = document.getElementById("artistInput");
+const output = document.getElementById("output");
 
 searchBtn.addEventListener("click", async () => {
-    const name = artistInput.value();
+    const name = artistInput.value.trim();
     if (!name) return;
 
     // Show a msg while user wait eg. loading srtist
