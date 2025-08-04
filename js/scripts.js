@@ -23,59 +23,69 @@ async function makeChallenge(verifier) {
 }
 
 //Once page loads, login handle
-(async function authenticate() {
+;(async function authenticate() {
     const params = new URLSearchParams(window.location.search);
-    const codeParam = params.get("code");
+    const code = params.get("code");
     const storedToken = sessionStorage.getItem("sessionToken");
 
+    // if there's a token, return nothing
     if (storedToken) return;
 
-    if (codeParam) {
-        const verifier = sessionStorage.getItem("sessionVerifier");
-        const body = new URLSearchParams({
-            grant_type: "authorization_code",
-            code: codeParam,
-            redirect_uri: redirectUri,
-            client_id: clientId,
-            code_verifier: verifier
-        });
-
-        const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body
-        });
-        const {access_token} = await tokenResponse.json();
-        sessionStorage.setItem("sessionToken", access_token);
-        window.history.replaceState({}, "", redirectUri);
+    if (code) {
+        await fetchAccessToken(code);
         return;
+        
     }
 
+    // Begin the auth process
+    startAuth()
+})();
+
+// refer user to spotify's auth using the challenge
+async function startAuth() {
     // begin the PKCE login
     const verifier = makeVerifier();
     const challenge = await makeChallenge(verifier);
     sessionStorage.setItem("sessionVerifier", verifier);
 
     const authUrl = new URL("https://accounts.spotify.com/authorize");
-    authUrl.searchParams.set("client_id", clientId);
     authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("client_id", clientId);
     authUrl.searchParams.set("redirect_uri", redirectUri);
     authUrl.searchParams.set("code_challenge_method", "S256");
     authUrl.searchParams.set("code_challenge", challenge);
 
     window.location = authUrl;
-})();
-
-
-
-// Function to get the access token
-function getAccessToken() {
-    const token = sessionStorage.getItem("sessionToken");
-    if (!token) {
-        throw new Error("You're not authenticated- please retry!");
-    }
-    return token;
 };
+
+
+// Function to fetch the access token
+async function fetchAccessToken(code) {
+    const verifier = sessionStorage.getItem("sessionVerifier");
+    const body = new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        code_verifier: verifier
+    });
+
+    const res = await fetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
+        headers: {"Conetnt-Type": "application/x-www-form-urlencoded"},
+        body
+    });
+
+    if (!res.ok) {
+        console.error("Token failed:", await res.text());
+        return;
+    }
+
+    const {access_token} = await res.json();
+    sessionStorage.setItem("sessionToken", access_token);
+
+    window.history.replaceState({}, "", redirectUri);
+}
 
 // Call the search endpooint for the artist
 async function searchArtist(name) {
