@@ -72,7 +72,7 @@ async function fetchAccessToken(code) {
 
     const res = await fetch("https://accounts.spotify.com/api/token", {
         method: "POST",
-        headers: {"Conetnt-Type": "application/x-www-form-urlencoded"},
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
         body
     });
 
@@ -85,7 +85,14 @@ async function fetchAccessToken(code) {
     sessionStorage.setItem("sessionToken", access_token);
 
     window.history.replaceState({}, "", redirectUri);
-}
+};
+
+// set up helper for the stored token
+function getAccessToken() {
+    const token = sessionStorage.getItem("sessionToken");
+    if (!token) throw new Error("You're not authenticated! Please try again");
+    return token;
+};
 
 // Call the search endpooint for the artist
 async function searchArtist(name) {
@@ -96,9 +103,7 @@ async function searchArtist(name) {
                      + `?q=${encodeURIComponent(name)}`
                      + `&type=artist&limit=1`;
 
-const searchResponse = await fetch(searchUrl, {
-    headers: {Authorization: `Bearer ${token}`}
-});
+const searchResponse = await fetch(searchUrl, {headers: authHeader});
 
 if (!searchResponse.ok) {
     console.error(
@@ -120,10 +125,14 @@ return searchData.artists.items[0] || null;
 async function fetchTopTracks(artistId) {
     const token = getAccessToken();
     const authHeader = { Authorization: `Bearer ${token}`};
-
     // Using the track endpoint
     const tracksUrl = `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`;
+
     const topTracksRes = await fetch(tracksUrl, {headers: authHeader});
+    if (!topTracksRes.ok) {
+        console.error("Top-tracks failed:", await topTracksRes.text());
+        return [];
+    }
 
     // Parse the Json res
     const topTracksData = await topTracksRes.json();
@@ -158,15 +167,17 @@ function renderArtistTracks(artist, tracks) {
         container.appendChild(image);
     };
 
+    // Artist Follower count
     const followers = document.createElement("p");
     followers.textContent = `Followers: ${artist.followers.total.toLocaleString()}`;
     container.appendChild(followers);
 
+    // Genre of songs artist is in
     const genres = document.createElement("p");
     genres.textContent = "Genres: " + (artist.genres.join(", ") || "N/A");
     container.appendChild(genres);
 
-    // Music traks heading
+    // Music tracks heading
     const musicTracks = document.createElement("h3");
     musicTracks.textContent = "Top Tracks";
     container.appendChild(musicTracks);
