@@ -4,20 +4,22 @@ const clientId = "c41a56045bc44c9fbaf18dbb27c4f7de";
 const redirectUri = window.location.origin + window.location.pathname;
 
 // PKCE Helpers
-function makeVerifier () {
-    const array = new Uint8Array(64);
-    crypto.getRandomValues(array);
-    return Array.from(array).map(byte => byte.toString(16).padStart(2, "0")).join("");
+// From https://github.com/spotify/web-api-examples/tree/master/authorization
+function makeVerifier (len = 64) {
+    const possibleCode = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const array = crypto.getRandomValues(new Uint8Array(len));
+    return Array.from(array)
+    .map(x => possibleCode[x % possibleCode.length])
+    .join("");
 }
 
-// PKCE verifier in challenge(from documentation)
+// The url encoder for the verifier to challenge
 async function makeChallenge(verifier) {
-    const hashBuffer = await crypto.subtle.digest("SHA-256", 
+    const digest = await crypto.subtle.digest("SHA-256", 
         new TextEncoder().encode(verifier)
     );
-    const hashArray = new Uint8Array(hashBuffer);
-    const base64 = btoa(String.fromCharCode(...hashArray));
-    return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)));
+    return base64.replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 }
 
 //Once page loads, login handle
@@ -93,7 +95,7 @@ if (!searchResponse.ok) {
         "Artist search failed:", 
         await searchResponse.text()
     );
-    return null;
+    return null
 }
 
 //Parse the json response
