@@ -3,7 +3,7 @@
 
 <h2>Overview</h2>
 <p>This is an interactive web app that lets users search for any artist and view their top 5 spotify muisc tracks.</p>
-<p>The api uses the <strong>Authorization code with PKCE </strong>flow from the <a href="https://developer.spotify.com/documentation/web-api/tutorials/code-flow/">spotify Web API documentation</a></p>
+<p>The api uses the <strong>Authorization code with PKCE </strong>flow from the <a href="https://developer.spotify.com/documentation/web-api">spotify Web API documentation</a></p>
 
 <h3>Key Features:</h3>
 <ul>
