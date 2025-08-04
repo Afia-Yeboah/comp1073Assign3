@@ -59,8 +59,26 @@ h1 {
     font-weight: 600;
 }
 
-#output {
+#output .artist-info {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 1rem;
+    margin: 1rem 0;
+}
+
+#output .artist-info .artist-details p {
+    margin: 0.25rem 0;
+}
+
+#output ol {
+    list-style-position: inside;
+    padding: 0;
+    margin: 1rem 0;
+}
+
+#output ol li {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0.25rem;
+    padding: 0.5rem 1rem;
+    margin: 0.5rem 0;
 }

@@ -153,10 +153,12 @@ function renderArtistTracks(artist, tracks) {
         return;
     };
 
-
     const artistName = document.createElement("h2");
     artistName.textContent = artist.name;
     container.appendChild(artistName);
+
+    const infoBox = document.createElement("div");
+    infoBox.classList.add("artist-info");
 
     const artistImage = artist.images[0]?.url;
     if (artistImage) {
@@ -167,6 +169,9 @@ function renderArtistTracks(artist, tracks) {
         container.appendChild(image);
     };
 
+    const details = document.createElement("div");
+    details.classList.add("artist-details");
+
     // Artist Follower count
     const followers = document.createElement("p");
     followers.textContent = `Followers: ${artist.followers.total.toLocaleString()}`;
@@ -176,6 +181,9 @@ function renderArtistTracks(artist, tracks) {
     const genres = document.createElement("p");
     genres.textContent = "Genres: " + (artist.genres.join(", ") || "N/A");
     container.appendChild(genres);
+
+    infoBox.appendChild(details);
+    container.appendChild(infoBox);
 
     // Music tracks heading
     const musicTracks = document.createElement("h3");
