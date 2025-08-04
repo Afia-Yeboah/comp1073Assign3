@@ -7,18 +7,34 @@
 
 <h3>Key Features:</h3>
 <ul>
-    <li>Search any artist by name<li>
-    <li>Display the artist's photo<li>
-    <li>Show artist follower Count<li>
-    <li>List the artist's genres<li>
-</ul>
+        <li>Search any artist by name</li>
+        <li>Display the artist’s photo</li>
+        <li>Show the artist’s follower count</li>
+        <li>List the artist’s genres</li>
+        <li>Retrieve and display the top 5 tracks</li>
+    </ul>
 
-<h5>Documentation & Resources used</h5>
-<ul>
-    <li>
-    <a href= "https://developer.spotify.com/documentation/web-api/tutorials/code-flow"> Spotify Auth code with PKCE Tutorial</a></li>
-    <li> <a href="https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest">SybtleCryptoDigest</a></li>
-    <li> <a href="https://developer.mozilla.org/en-US/docs/Glossary/Base64">Base64</a><li>
-    <li> <a href="https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams"> URLSearchParams</a></li>
-</ul>
+<h5>Documentation & Resources</h5>
+      <ul>
+        <li>
+          <a href="https://developer.spotify.com/documentation/web-api/tutorials/code-flow/" target="_blank">
+            Spotify Auth Code with PKCE Tutorial
+          </a>
+        </li>
+        <li>
+          <a href="https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest" target="_blank">
+            MDN: SubtleCrypto.digest
+          </a>
+        </li>
+        <li>
+          <a href="https://developer.mozilla.org/en-US/docs/Glossary/Base64" target="_blank">
+            MDN: Base64
+          </a>
+        </li>
+        <li>
+          <a href="https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams" target="_blank">
+            MDN: URLSearchParams
+          </a>
+        </li>
+      </ul>
 
